@@ -33,9 +33,25 @@ router.post('/login', async (req, res) => {
     if (!isMatch) return res.status(401).json({ error: 'Contraseña incorrecta' });
     
     // 3. Generar token
-    const token = jwt.sign({ id: user._id }, 'secret_key', { expiresIn: '1h' });
+    const token = jwt.sign(
+  { 
+    id: user._id,
+    name: user.name, // Añade el nombre al token
+    email: user.email
+  }, 
+  'secret_key', 
+  { expiresIn: '1h' }
+);
     
-    res.json({ token, userId: user._id });
+    res.json({
+  token,
+  user: {
+    name: user.name,
+    email: user.email,
+    id: user._id,
+  },
+});
+
   } catch (err) {
     res.status(500).json({ error: 'Error en el servidor' });
   }

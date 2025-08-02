@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,8 @@ import { ImageBackground } from 'react-native';
 import { Ionicons, Feather, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { popularTours } from './ToursScreen';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import jwt_decode from 'jwt-decode';
 
 const { width } = Dimensions.get('window');
 
@@ -53,9 +55,42 @@ const destinationData = {
 export default function HomeScreen() {
   const navigation = useNavigation();
   const route = useRoute();
-
   const [selected, setSelected] = useState('Merida');
   const [searchText, setSearchText] = useState('');
+  const [userName, setUserName] = useState('');
+
+  // Obtener el nombre del usuario al cargar la pantalla
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const token = await AsyncStorage.getItem('userToken');
+        
+        if (token) {
+          // Decodificar el token para obtener los datos del usuario
+          const decoded = jwt_decode(token);
+          
+          // Si el nombre está incluido en el token (como en tu respuesta de login)
+          if (decoded.name) {
+            setUserName(decoded.name);
+          } else {
+            // Si no está en el token, hacer una petición para obtener los datos del usuario
+            const response = await fetch(`http://localhost:3000/api/users/${decoded.id}`, {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+            
+            const userData = await response.json();
+            setUserName(userData.name);
+          }
+        }
+      } catch (error) {
+        console.error('Error al obtener datos del usuario:', error);
+      }
+    };
+
+    fetchUserData();
+  }, []);
 
   const destinations = Object.keys(destinationData);
   const filteredDestinations = destinations.filter(dest =>
@@ -73,11 +108,11 @@ export default function HomeScreen() {
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <View>
-            <Text style={styles.welcome}>Hello, <Text style={styles.username}>Jesus</Text></Text>
+            <Text style={styles.welcome}>Hello, <Text style={styles.username}>{userName || 'Guest'}</Text></Text>
             <Text style={styles.subwelcome}>Welcome to TourCraft</Text>
           </View>
           <TouchableOpacity onPress={() => navigation.navigate('Usuario')}>
-            <Image source={require('../assets/yisus.png')} style={styles.avatar} />
+            <Image source={require('../assets/user.webp')} style={styles.avatar} />
           </TouchableOpacity>
         </View>
 

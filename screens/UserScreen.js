@@ -44,7 +44,7 @@ export default function UserScreen() {
 
         <TouchableOpacity style={styles.optionButton} onPress={handleViewReservations}>
           <Ionicons name="book-outline" size={24} color="#5e8b92" style={styles.optionIcon} />
-          <Text style={styles.optionText}>View my reservations</Text>
+          <Text style={styles.optionText}>View my reservations (no sirve)</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.optionButton} onPress={handleLogout}>
