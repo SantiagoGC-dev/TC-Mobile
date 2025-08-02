@@ -1,44 +1,24 @@
+require('dotenv').config();
 const express = require('express');
-const cors = require('cors');
-const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
+const authRoutes = require('./routes/auth');
 
 const app = express();
 const PORT = 3000;
 
-app.use(cors());
-app.use(bodyParser.json());
+// Conexión a MongoDB
+mongoose.connect('mongodb://localhost:27017/TC-Mobile')
+  .then(() => console.log('✅ Conectado a MongoDB'))
+  .catch(err => console.error('❌ Error de MongoDB:', err));
 
-// Base de datos simulada
-const users = [];
+// Middlewares básicos
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Registro
-app.post('/api/users/register', (req, res) => {
-  const { username, email, password } = req.body;
-  const userExists = users.find(u => u.email === email || u.username === username);
+// Rutas
+app.use('/api/users', authRoutes);
 
-  if (userExists) {
-    return res.status(400).json({ error: 'Usuario ya registrado' });
-  }
-
-  const newUser = { username, email, password };
-  users.push(newUser);
-  res.status(201).json({ message: 'Usuario registrado', ...newUser });
-});
-
-// Login
-app.post('/api/users/login', (req, res) => {
-  const { emailOrUsername, password } = req.body;
-  const user = users.find(u =>
-    (u.email === emailOrUsername || u.username === emailOrUsername) && u.password === password
-  );
-
-  if (!user) {
-    return res.status(401).json({ error: 'Credenciales inválidas' });
-  }
-
-  res.json({ message: 'Login exitoso', username: user.username, email: user.email });
-});
-
+// Iniciar servidor
 app.listen(PORT, () => {
-  console.log(`Servidor backend corriendo en http://localhost:${PORT}`);
+  console.log(`🚀 Servidor en http://localhost:${PORT}`);
 });

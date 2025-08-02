@@ -8,12 +8,14 @@ export default function RegisterScreen({ navigation }) {
     password: '',
     confirmPassword: ''
   });
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (key, value) => {
     setForm({ ...form, [key]: value });
   };
 
   const handleRegister = async () => {
+    console.log("Datos a enviar:", form);
     const { name, email, password, confirmPassword } = form;
 
     if (!name || !email || !password || !confirmPassword) {
@@ -26,8 +28,15 @@ export default function RegisterScreen({ navigation }) {
       return;
     }
 
+    if (password.length < 6) {
+      Alert.alert('Error', 'La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+
+    setIsLoading(true);
+
     try {
-      const response = await fetch('http://192.168.0.169:3000/api/auth/register', {
+      const response = await fetch('http://192.168.0.169:3000/api/users/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password })
@@ -35,15 +44,18 @@ export default function RegisterScreen({ navigation }) {
 
       const data = await response.json();
 
-      if (response.ok) {
-        Alert.alert('Éxito', 'Registro exitoso');
-        navigation.navigate('Login');
-      } else {
-        Alert.alert('Error', data.message || 'No se pudo registrar');
+      if (!response.ok) {
+        throw new Error(data.error || 'No se pudo registrar');
       }
+
+      Alert.alert('Éxito', 'Registro exitoso', [
+        { text: 'OK', onPress: () => navigation.navigate('Login') }
+      ]);
     } catch (error) {
       console.error(error);
-      Alert.alert('Error', 'Error de conexión con el servidor');
+      Alert.alert('Error', error.message || 'Error de conexión con el servidor');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -52,13 +64,43 @@ export default function RegisterScreen({ navigation }) {
       <Text style={styles.title}>Register</Text>
       <Text style={styles.subtitle}>Hello user,{"\n"}do have a great journey.</Text>
 
-      <TextInput placeholder="Name" value={form.name} onChangeText={(text) => handleChange('name', text)} style={styles.input} />
-      <TextInput placeholder="Email" keyboardType="email-address" value={form.email} onChangeText={(text) => handleChange('email', text)} style={styles.input} />
-      <TextInput placeholder="Password" secureTextEntry value={form.password} onChangeText={(text) => handleChange('password', text)} style={styles.input} />
-      <TextInput placeholder="Confirm Password" secureTextEntry value={form.confirmPassword} onChangeText={(text) => handleChange('confirmPassword', text)} style={styles.input} />
+      <TextInput 
+        placeholder="Name" 
+        value={form.name} 
+        onChangeText={(text) => handleChange('name', text)} 
+        style={styles.input} 
+      />
+      <TextInput 
+        placeholder="Email" 
+        keyboardType="email-address"
+        autoCapitalize="none"
+        value={form.email} 
+        onChangeText={(text) => handleChange('email', text)} 
+        style={styles.input} 
+      />
+      <TextInput 
+        placeholder="Password" 
+        secureTextEntry 
+        value={form.password} 
+        onChangeText={(text) => handleChange('password', text)} 
+        style={styles.input} 
+      />
+      <TextInput 
+        placeholder="Confirm Password" 
+        secureTextEntry 
+        value={form.confirmPassword} 
+        onChangeText={(text) => handleChange('confirmPassword', text)} 
+        style={styles.input} 
+      />
 
-      <TouchableOpacity style={styles.registerBtn} onPress={handleRegister}>
-        <Text style={styles.registerText}>Sign up</Text>
+      <TouchableOpacity 
+        style={styles.registerBtn} 
+        onPress={handleRegister}
+        disabled={isLoading}
+      >
+        <Text style={styles.registerText}>
+          {isLoading ? 'Creating account...' : 'Sign up'}
+        </Text>
       </TouchableOpacity>
     </ScrollView>
   );

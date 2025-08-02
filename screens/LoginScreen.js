@@ -3,43 +3,47 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'reac
 
 export default function LoginScreen({ navigation }) {
   const [credentials, setCredentials] = useState({ user: '', password: '' });
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (key, value) => {
     setCredentials({ ...credentials, [key]: value });
   };
 
   const handleLogin = async () => {
-  if (!credentials.user.trim() || !credentials.password.trim()) {
-    Alert.alert('Campos incompletos', 'Por favor ingresa usuario y contraseña');
-    return;
-  }
-
-  try {
-    const response = await fetch('http://192.168.0.169:3000/api/users/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        emailOrUsername: credentials.user,
-        password: credentials.password,
-      }),
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-      Alert.alert('Login exitoso', `Bienvenido, ${data.username || data.email}`);
-      navigation.navigate('Home');
-    } else {
-      Alert.alert('Error', data.error || 'Credenciales inválidas');
+    if (!credentials.user.trim() || !credentials.password.trim()) {
+      Alert.alert('Campos incompletos', 'Por favor ingresa usuario y contraseña');
+      return;
     }
-  } catch (error) {
-    console.error('Login error:', error);
-    Alert.alert('Error de conexión', 'No se pudo conectar al servidor');
-  }
-};
 
+    setIsLoading(true);
+    
+    try {
+      const response = await fetch('http://192.168.0.169:3000/api/users/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          emailOrUsername: credentials.user,
+          password: credentials.password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Credenciales inválidas');
+      }
+
+      Alert.alert('Login exitoso', `Bienvenido, ${data.user.name || data.user.email}`);
+      navigation.navigate('Home');
+    } catch (error) {
+      console.error('Login error:', error);
+      Alert.alert('Error', error.message || 'No se pudo iniciar sesión');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -51,6 +55,7 @@ export default function LoginScreen({ navigation }) {
         value={credentials.user}
         onChangeText={(text) => handleChange('user', text)}
         style={styles.input}
+        autoCapitalize="none"
       />
       <TextInput
         placeholder="Password"
@@ -60,8 +65,14 @@ export default function LoginScreen({ navigation }) {
         style={styles.input}
       />
 
-      <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
-        <Text style={styles.loginText}>Sign in</Text>
+      <TouchableOpacity 
+        style={styles.loginBtn} 
+        onPress={handleLogin}
+        disabled={isLoading}
+      >
+        <Text style={styles.loginText}>
+          {isLoading ? 'Processing...' : 'Sign in'}
+        </Text>
       </TouchableOpacity>
     </View>
   );
